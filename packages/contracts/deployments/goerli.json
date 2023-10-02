@@ -4,23 +4,33 @@
   "txHash": "0xf6dc8248782f619b6d8d092e13c68166811d541a2b90f3753f4c8d89930f1fb5",
   "blockNumber": "7640975",
   "implementations": {
-    "instant": ["0x3e82D76CFFA638b45f142F4574B7Ca0f55DcD252"],
+    "instant": [
+      "0x3e82D76CFFA638b45f142F4574B7Ca0f55DcD252"
+    ],
     "escrow": [
       "0x11dd8D203F65F0a3cBF05eC791f1c8DD658b914b",
       "0x06D1E6050ed0dC62B8aec714248341F247e7dF76"
     ],
-    "split-escrow": ["0x1368da5F0e50D6670F61C6BF6bF4B1bf963e2514"]
+    "split-escrow": [
+      "0x1368da5F0e50D6670F61C6BF6bF4B1bf963e2514"
+    ]
   },
-  "safeSplitsEscrowZap": "0x",
   "spoilsManager": {
-    "factory": "0x",
-    "implementations": []
+    "factory": "0x330Aa36017fB426f1595A969B7020D2A914E4873",
+    "implementations": [
+      "0x01701b52e93dA09Ba535847Aeea1015e3376F9Bc"
+    ]
   },
   "zap": {
     "dao": "0xa4161db839f84e27122398ae6337ad47765e6cd5",
     "safeSingleton": "0x3E5c63644E683549055b9Be8653de26E0B4CD36E",
     "safeFactory": "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2",
     "splitMain": "0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE",
-    "spoilsManager": "0x"
+    "spoilsManager": "0xc98ecFeBB790D971EF7390043b168C9D8e103C5d",
+    "instances": [
+      "0x858c8D9074a2F1Ff30Ed23f8FA99B637B5107645",
+      "0x2078f5675D17628bC75527a1547219A73b8D5C69",
+      "0x6b2f356E1Ead39747E47e43a0e23182B53cECf51"
+    ]
   }
 }

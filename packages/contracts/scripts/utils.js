@@ -1,3 +1,4 @@
+const { run } = require("hardhat");
 const fs = require("fs");
 const { getUseBlockscout } = require("./constants");
 

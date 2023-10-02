@@ -5,16 +5,19 @@ const {
   readDeploymentInfo,
   writeDeploymentInfo,
   updateSpoilsManager,
+  addSpoilsManagerInstance,
+  verifyContract,
 } = require("./utils");
 
-const spoilsManagerFactoryAbi = require("../build/contracts/SpoilsManager.sol/SpoilsManagerFactory.json")
-  .abi;
+const {
+  abi: spoilsManagerFactoryAbi,
+} = require("../build/contracts/SpoilsManager.sol/SpoilsManagerFactory.json");
 
 const INITIAL_SPOILS = 10000;
 const INITIAL_RECEIVER = undefined; // fallback to deploymentsJson.zap.dao
 const INITIAL_OWNER = undefined; // fallback to deployer.address
 
-async function deploySpoilsManagerFactory() {
+async function deploySpoilsManagerFactory(chainId) {
   const SpoilsManagerImplementation = await ethers.getContractFactory(
     "SpoilsManager",
   );
@@ -27,6 +30,8 @@ async function deploySpoilsManagerFactory() {
   await spoilsManagerImplementation.initLock();
   console.log("Initialized Lock Successful");
 
+  verifyContract(chainId, spoilsManagerImplementation.address, []);
+
   const SpoilsManagerFactory = await ethers.getContractFactory(
     "SpoilsManagerFactory",
   );
@@ -36,14 +41,16 @@ async function deploySpoilsManagerFactory() {
   await spoilsManagerFactory.deployed();
   console.log("Spoils Manager Factory Address:", spoilsManagerFactory.address);
 
-  const deployment = readDeploymentInfo(network.name);
+  verifyContract(chainId, spoilsManagerFactory.address, [
+    spoilsManagerImplementation.address,
+  ]);
 
+  const deployment = readDeploymentInfo(network.name);
   const updatedDeployment = updateSpoilsManager(
     deployment,
     spoilsManagerFactory.address,
     spoilsManagerImplementation.address,
   );
-
   writeDeploymentInfo(updatedDeployment, network.name);
 
   return {
@@ -56,6 +63,7 @@ async function deploySpoilsManager(
   { spoils, receiver, newOwner },
   spoilsManagerData,
   deployer,
+  chainId,
 ) {
   const spoilsManagerFactory = new ethers.Contract(
     spoilsManagerData.factory,
@@ -68,17 +76,30 @@ async function deploySpoilsManager(
     receiver,
     newOwner,
   );
-
   const spoilsManager = await spoilsManagerReceipt.wait();
+
+  if (spoilsManager.logs.length === 0) {
+    console.log(
+      "Spoils Manager Creation Failed, Check Saved Factory/Implementation Address",
+    );
+    return undefined;
+  }
   const newSpoilsManager = spoilsManager.logs[0].address;
   console.log("New Spoils Manager: ", spoilsManager.logs[0].address);
+
+  const test = await verifyContract(chainId, newSpoilsManager, []);
+  console.log("Verified Spoils Manager", test);
+
+  const deploymentInfo = readDeploymentInfo(network.name);
+  const updateData = addSpoilsManagerInstance(deploymentInfo, newSpoilsManager);
+  writeDeploymentInfo(updateData, network.name);
 
   return newSpoilsManager;
 }
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  // const address = await deployer.getAddress();
+  const address = await deployer.getAddress();
   const { chainId } = await deployer.provider.getNetwork();
 
   // check deployments file for necessary deployments
@@ -91,7 +112,8 @@ async function main() {
       (spoilsManagerData.implementations &&
         spoilsManagerData.implementations.length === 0))
   ) {
-    spoilsManagerData = await deploySpoilsManagerFactory();
+    console.log("deploying spoils manager factory");
+    spoilsManagerData = await deploySpoilsManagerFactory(chainId);
   }
 
   if (!spoilsManagerData || !zapData) return;
@@ -100,10 +122,11 @@ async function main() {
     {
       spoils: INITIAL_SPOILS,
       receiver: INITIAL_RECEIVER || zapData.dao,
-      newOwner: INITIAL_OWNER || deployer.address,
+      newOwner: INITIAL_OWNER || address,
     },
     spoilsManagerData,
     deployer,
+    chainId,
   );
 }
 

@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
-const { ethers, run, network } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const { writeDeploymentInfo } = require("./utils");
 const {
   getNetworkCurrency,
   getNetworkName,
   getWrappedTokenAddress,
-  getUseBlockscout,
 } = require("./constants");
+const { verifyContract } = require("./utils");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -49,21 +49,13 @@ async function main() {
 
   writeDeploymentInfo(deploymentInfo, network);
 
-  // don't verify on local network
-  if (chainId === 31337) return;
-
   await smartInvoiceFactory.deployTransaction.wait(5);
-
-  const TASK_VERIFY = getUseBlockscout(chainId)
-    ? "verify:verify-blockscout"
-    : "verify:verify";
-
   console.log("Deployed SmartInvoiceFactory to:", smartInvoiceFactory.address);
   console.log("Wrapped token address:", getWrappedTokenAddress(chainId));
-  await run(TASK_VERIFY, {
-    address: smartInvoiceFactory.address,
-    constructorArguments: getWrappedTokenAddress(chainId),
-  });
+
+  verifyContract(network, smartInvoiceFactory.address, [
+    getWrappedTokenAddress(chainId),
+  ]);
   console.log("Verified Factory");
 }
 

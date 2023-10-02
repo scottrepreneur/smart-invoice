@@ -1,14 +1,19 @@
 /* eslint-disable no-console */
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const {
   getZapData,
   getFactory,
   getWrappedTokenAddress,
 } = require("./constants");
+const {
+  readDeploymentInfo,
+  writeDeploymentInfo,
+  addZapInstance,
+  verifyContract,
+} = require("./utils");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  // const address = await deployer.getAddress();
   const { chainId } = await deployer.provider.getNetwork();
 
   // todo handle other networks
@@ -31,7 +36,24 @@ async function main() {
   await safeSplitsEscrowZap.deployed();
   console.log("Safe-Splits-Escrow Zap Address:", safeSplitsEscrowZap.address);
 
-  // handle append to deployments file
+  await safeSplitsEscrowZap.deployTransaction.wait(5);
+
+  await verifyContract(chainId, safeSplitsEscrowZap.address, [
+    zapData.dao,
+    zapData.safeSingleton,
+    zapData.safeFactory,
+    zapData.splitMain,
+    zapData.spoilsManager,
+    getFactory(chainId),
+    getWrappedTokenAddress(chainId),
+  ]);
+
+  const deploymentInfo = readDeploymentInfo(network.name);
+  const updatedData = addZapInstance(
+    deploymentInfo,
+    safeSplitsEscrowZap.address,
+  );
+  writeDeploymentInfo(updatedData, network.name);
 }
 
 main()
